@@ -27,13 +27,48 @@ console.log(
    |__/|__/      \\_______/ \\_______/|__/  \\__/ \\_______/|__/                  
    `);
 
+// const findName = (table) => {
+//     // Get department names and ids
+//     const tableName = [];
+//     db.query(`SELECT * FROM ${table}`, (err, rows) => {
+//         if (err) {
+//             console.log(err);
+//         }
+//         for (let i = 0; i < rows.length; i++) {
+//             tableName[i] = rows[i].name;
+//         }
+//     });
+//     return tableName;
+// }
+
+// const findId = (table, label) => {
+//     let tableId = 0;
+//     const tableNameCheck = [];
+//     const tableIdCheck = [];
+//     db.query(`SELECT * FROM ${table}`, (err, rows) => {
+//         if (err) {
+//             console.log(err);
+//         }
+//         for (let i = 0; i < rows.length; i++) {
+//             tableNameCheck[i] = rows[i].name;
+//             tableIdCheck[i] = rows[i].id;
+//         }
+//     })
+//     for (let index = 0; index < tableNameCheck.length; index++) {
+//         if (tableNameCheck[index] === label) {
+//             tableId = tableIdCheck[index];
+//         }
+//     }
+//     return tableId;
+// }
+
 function init() {
     inquirer
         .prompt({
             type: 'list',
             name: 'toDo',
             message: 'Would you like to do?',
-            choices: ['view all departments', 'view all roles', 'view all employees', 'add a department', 'add a role', 'add an employee', 'update an employee role', 'Update employee managers', 'View employees by manager', 'View employees by department', 'Delete departments', 'roles departments', 'employees departments', 'View the total utilized budget of a department', 'exit'],
+            choices: ['view all departments', 'view all roles', 'view all employees', 'add a department', 'add a role', 'add an employee', 'update an employee role', 'Update employee managers', 'View employees by manager', 'View employees by department', 'Delete departments', 'Delete roles', 'Delete employees', 'View the total utilized budget of a department', 'exit'],
         })
         .then(({ toDo }) => {
             if (toDo === 'view all departments') {
@@ -77,6 +112,216 @@ function init() {
                     console.table(rows);
                     init();
                 });
+            } else if (toDo === 'add a department') {
+                inquirer
+                    .prompt({
+                        type: 'input',
+                        name: 'departmentName',
+                        message: 'What is the department\'s name?',
+                    })
+                    .then((departmentName) => {
+                        const sql = `INSERT INTO departments (name) VALUES (?)`;
+                        const params = departmentName.departmentName;
+                        db.query(sql, params, (err, result) => {
+                            if (err) {
+                                console.log(err);
+                            }
+                        });
+                        console.log('Updated departments')
+                        init();
+                    })
+            } else if (toDo === 'add a role') {
+                // Get department names and ids
+                const departmentNameCheck = [];
+                const departmentIdCheck = [];
+                db.query(`SELECT * FROM departments`, (err, rows) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    for (let i = 0; i < rows.length; i++) {
+                        departmentNameCheck[i] = rows[i].name;
+                        departmentIdCheck[i] = rows[i].id;
+                    }
+                });
+                inquirer
+                    .prompt([
+                        {
+                            type: 'input',
+                            name: 'roleName',
+                            message: 'What is the role\'s title?',
+                        },
+                        {
+                            type: 'input',
+                            name: 'salary',
+                            message: 'What is the salary?',
+                        },
+                        {
+                            type: 'list',
+                            name: 'department',
+                            message: 'What is the department for this role?',
+                            choices: departmentNameCheck,
+                        }
+                    ])
+                    .then((input) => {
+                        const sql = `INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)`;
+                        // find department id choice
+                        let deptId = 0;
+                        for (let index = 0; index < departmentNameCheck.length; index++) {
+                            if (departmentNameCheck[index] === input.department) {
+                                deptId = departmentIdCheck[index];
+                            }
+                        }
+                        const params = [input.roleName, input.salary, deptId];
+                        db.query(sql, params, (err, result) => {
+                            if (err) {
+                                console.log(err);
+                            }
+                        });
+                        console.log('Updated roles')
+                        init();
+                    })
+            } else if (toDo === 'add an employee') {
+                // Get role titles and ids
+                const roleTitleCheck = [];
+                const roleIdCheck = [];
+                db.query(`SELECT roles.id, roles.title FROM roles`, (err, rows) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    for (let i = 0; i < rows.length; i++) {
+                        roleTitleCheck[i] = rows[i].title;
+                        roleIdCheck[i] = rows[i].id;
+                    }
+                });
+                const employeeNameCheck = [];
+                const employeeIdCheck = [];
+                db.query(`SELECT employees.id, concat(employees.first_name,' ',employees.last_name) manager FROM employees`, (err, rows) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    for (let i = 0; i < rows.length; i++) {
+                        employeeNameCheck[i] = rows[i].manager;
+                        employeeNameCheck.push('None');
+                        employeeIdCheck[i] = rows[i].id;
+                    }
+                });
+                inquirer
+                    .prompt([
+                        {
+                            type: 'input',
+                            name: 'firstName',
+                            message: 'What is the employee\'s first name?',
+                        },
+                        {
+                            type: 'input',
+                            name: 'lastName',
+                            message: 'What is the employee\'s last name?',
+                        },
+                        {
+                            type: 'list',
+                            name: 'role',
+                            message: 'What is the role for this employee?',
+                            choices: roleTitleCheck,
+                        },
+                        {
+                            type: 'list',
+                            name: 'manager',
+                            message: 'Who is the manager for this employee?',
+                            choices: employeeNameCheck, 
+                        }
+                    ])
+                    .then((input) => {
+                        const sql = `INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)`;
+                        // find department id choice
+                        let roleId = 0;
+                        for (let index = 0; index < roleTitleCheck.length; index++) {
+                            if (roleTitleCheck[index] === input.role) {
+                                roleId = roleIdCheck[index];
+                            }
+                        }
+                        let employeeId = 0;
+                        if (input.manager === 'None'){
+                            employeeId = null;
+                        } else {
+                        for (let index = 0; index < employeeNameCheck.length; index++) {
+                            if (employeeNameCheck[index] === input.manager) {
+                                employeeId = employeeIdCheck[index];
+                            }
+                        }
+                    }
+                        const params = [input.firstName, input.lastName, roleId, employeeId];
+                        db.query(sql, params, (err, result) => {
+                            if (err) {
+                                console.log(err);
+                            }
+                        });
+                        console.log('Updated employees')
+                        init();
+                    })
+            } else if (toDo === 'update an employee role') {
+                // Get role titles and ids
+                const roleTitleCheck = [];
+                const roleIdCheck = [];
+                db.query(`SELECT roles.id, roles.title FROM roles`, (err, rows) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    for (let i = 0; i < rows.length; i++) {
+                        roleTitleCheck[i] = rows[i].title;
+                        roleIdCheck[i] = rows[i].id;
+                    }
+                });
+                const employeeNameCheck = [];
+                const employeeIdCheck = [];
+                db.query(`SELECT employees.id, concat(employees.first_name,' ',employees.last_name) employee FROM employees`, (err, rows) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    for (let i = 0; i < rows.length; i++) {
+                        employeeNameCheck[i] = rows[i].employee;
+                        employeeIdCheck[i] = rows[i].id;
+                    }
+                });
+                
+                inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'employee',
+                            message: 'Which employee do you want to update?',
+                            choices: employeeNameCheck, 
+                        },
+                        {
+                            type: 'list',
+                            name: 'role',
+                            message: 'What is the new role for this employee?',
+                            choices: roleTitleCheck,
+                        }
+                    ])
+                    .then((input) => {
+                        const sql = `UPDATE employees SET role_id = ? WHERE id = ?`;
+                        // find department id choice
+                        let roleId = 0;
+                        for (let index = 0; index < roleTitleCheck.length; index++) {
+                            if (roleTitleCheck[index] === input.role) {
+                                roleId = roleIdCheck[index];
+                            }
+                        }
+                        let employeeId = 0;
+                        for (let index = 0; index < employeeNameCheck.length; index++) {
+                            if (employeeNameCheck[index] === input.employee) {
+                                employeeId = employeeIdCheck[index];
+                            }
+                        }
+                        const params = [roleId, employeeId];
+                        db.query(sql, params, (err, result) => {
+                            if (err) {
+                                console.log(err);
+                            }
+                        });
+                        console.log('Updated employees')
+                        init();
+                    })
             } else if (toDo === 'exit') {
                 return;
             }
