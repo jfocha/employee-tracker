@@ -4,6 +4,8 @@ const db = require('./db/connection'); // required because of the code organizat
 // const inputCheck = require('./utils/inputCheck');
 const cTable = require('console.table');
 
+const employeeNames = require('./utils/getEmployeeNames')
+
 console.log(
     `
  /$$$$$$$$                         /$$                                        
@@ -27,42 +29,53 @@ console.log(
    |__/|__/      \\_______/ \\_______/|__/  \\__/ \\_______/|__/                  
    `);
 
-// const findName = (table) => {
-//     // Get department names and ids
-//     const tableName = [];
-//     db.query(`SELECT * FROM ${table}`, (err, rows) => {
-//         if (err) {
-//             console.log(err);
-//         }
-//         for (let i = 0; i < rows.length; i++) {
-//             tableName[i] = rows[i].name;
-//         }
-//     });
-//     return tableName;
-// }
+// let allEmployeeNames = async () => {
+//     const employeeNameCheck = [];
+//     const employeeIdCheck = [];
+//     const sql = `SELECT employees.id, concat(employees.first_name,' ',employees.last_name) employee FROM employees`
 
-// const findId = (table, label) => {
-//     let tableId = 0;
-//     const tableNameCheck = [];
-//     const tableIdCheck = [];
-//     db.query(`SELECT * FROM ${table}`, (err, rows) => {
+//     let response = await new Promise((resolve, reject) => db.query(sql, (err, rows) => {
 //         if (err) {
-//             console.log(err);
+//             reject(err);
+//         } else {
+//             resolve(rows);
 //         }
-//         for (let i = 0; i < rows.length; i++) {
-//             tableNameCheck[i] = rows[i].name;
-//             tableIdCheck[i] = rows[i].id;
-//         }
-//     })
-//     for (let index = 0; index < tableNameCheck.length; index++) {
-//         if (tableNameCheck[index] === label) {
-//             tableId = tableIdCheck[index];
-//         }
+
+//     }));
+//     // console.log(response);
+//     for (let i = 0; i < response.length; i++) {
+//         employeeNameCheck[i] = response[i].employee;
+//         employeeIdCheck[i] = response[i].id;
 //     }
-//     return tableId;
-// }
+//     // console.log(employeeNameCheck);
+//     return employeeNameCheck;
+// };
+// console.log(allEmployeeNames());
+// let allEmployeeNames = async () => {
+//     const employeeNameCheck = [];
+//     const employeeIdCheck = [];
+//     const sql = `SELECT employees.id, concat(employees.first_name,' ',employees.last_name) employee FROM employees`
+
+//     await db.query(sql, (err, rows) => {
+//         if (err) {
+//             reject(err);
+//         }
+        
+//         for (let i = 0; i < rows.length; i++) {
+//             employeeNameCheck[i] = rows[i].employee;
+//             employeeIdCheck[i] = rows[i].id;
+//         }
+//         console.log(employeeNameCheck);
+//         // return employeeNameCheck;
+//     });
+//     return employeeNameCheck;
+
+    
+    
+// };
 
 function init() {
+    
     inquirer
         .prompt({
             type: 'list',
@@ -82,6 +95,7 @@ function init() {
                     console.table(rows);
                     init();
                 });
+
             } else if (toDo === 'view all roles') {
                 const sql = `SELECT roles.id, roles.title, departments.name AS department, roles.salary
                 FROM roles
@@ -205,6 +219,7 @@ function init() {
                         employeeIdCheck[i] = rows[i].id;
                     }
                 });
+
                 inquirer
                     .prompt([
                         {
@@ -227,7 +242,7 @@ function init() {
                             type: 'list',
                             name: 'manager',
                             message: 'Who is the manager for this employee?',
-                            choices: employeeNameCheck, 
+                            choices: employeeNameCheck,
                         }
                     ])
                     .then((input) => {
@@ -240,15 +255,15 @@ function init() {
                             }
                         }
                         let employeeId = 0;
-                        if (input.manager === 'None'){
+                        if (input.manager === 'None') {
                             employeeId = null;
                         } else {
-                        for (let index = 0; index < employeeNameCheck.length; index++) {
-                            if (employeeNameCheck[index] === input.manager) {
-                                employeeId = employeeIdCheck[index];
+                            for (let index = 0; index < employeeNameCheck.length; index++) {
+                                if (employeeNameCheck[index] === input.manager) {
+                                    employeeId = employeeIdCheck[index];
+                                }
                             }
                         }
-                    }
                         const params = [input.firstName, input.lastName, roleId, employeeId];
                         db.query(sql, params, (err, result) => {
                             if (err) {
@@ -259,6 +274,8 @@ function init() {
                         init();
                     })
             } else if (toDo === 'update an employee role') {
+                
+                
                 // Get role titles and ids
                 const roleTitleCheck = [];
                 const roleIdCheck = [];
@@ -281,21 +298,22 @@ function init() {
                         employeeNameCheck[i] = rows[i].employee;
                         employeeIdCheck[i] = rows[i].id;
                     }
+                    console.log(employeeNameCheck)
                 });
-                
+                console.log(employeeNameCheck)
                 inquirer
                     .prompt([
                         {
                             type: 'list',
                             name: 'employee',
                             message: 'Which employee do you want to update?',
-                            choices: employeeNameCheck, 
+                            choices: [employeeNameCheck],
                         },
                         {
                             type: 'list',
                             name: 'role',
                             message: 'What is the new role for this employee?',
-                            choices: roleTitleCheck,
+                            choices: [roleTitleCheck],
                         }
                     ])
                     .then((input) => {
@@ -336,6 +354,14 @@ function init() {
         });
 }
 
+// async function foo () {
+//     let names = await allEmployeeNames();
+//     console.log(names);
+//     return names;
+// }
+// names.then(foo());
+// console.log(foo());
+// console.log(names);
 init();
 
 /*
