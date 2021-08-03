@@ -25,6 +25,8 @@
   ## Usage 
   
   ![alt text](screenshot.png)
+
+  [Usage Video](https://drive.google.com/file/d/1JT2BFf4I25HUDZmjqylGqstgreBf-OPZ/view)
   
   
   ## Contributing
