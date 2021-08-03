@@ -281,8 +281,8 @@ function init() {
                         employeeNameCheck[i] = rows[i].employee;
                         employeeIdCheck[i] = rows[i].id;
                     }
-                });
-                
+                // });
+                // getEmployeeNames().then(data => )
                 inquirer
                     .prompt([
                         {
@@ -322,6 +322,7 @@ function init() {
                         console.log('Updated employees')
                         init();
                     })
+                });
             } else if (toDo === 'exit') {
                 return;
             }
